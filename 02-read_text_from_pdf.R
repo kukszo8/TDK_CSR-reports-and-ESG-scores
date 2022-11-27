@@ -1,4 +1,6 @@
 library("tidyverse")
+library("tidytext")
+
 
 
 input <- tibble(file_name = list.files("input_7", full.names = TRUE)) %>%
@@ -13,4 +15,9 @@ input <- tibble(file_name = list.files("input_7", full.names = TRUE)) %>%
 
 df <- list.files("intermediate_data/", full.names=T) %>%
   keep(~str_ends(., "rds")) %>% 
-  map_dfr(readRDS)
+  map_dfr(readRDS)%>% 
+  unnest(raw_text)%>% 
+  unnest_tokens(word,raw_text) %>% 
+  anti_join(get_stopwords()) %>% 
+  count(word, sort = TRUE)
+

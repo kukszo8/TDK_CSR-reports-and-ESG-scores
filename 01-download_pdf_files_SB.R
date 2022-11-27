@@ -1,3 +1,4 @@
+library("tidyverse")
 sp500_ticker <- tidyquant::tq_index("SP500")$symbol
 
 # sp500_ticker <- read_html("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies") %>%
@@ -12,18 +13,18 @@ url_nasdaq <- str_c("https://www.responsibilityreports.com/HostedData/Responsibi
                       str_to_lower(),
                     "/NASDAQ_",
                     sp500_ticker,
-                    "_2020.pdf") %>%
+                    "_2018.pdf") %>%
   ifelse(str_detect(., "MMM"), str_replace(., "/m/", "/3/"), .) # manual cleaning
 
 url_nyse <- str_replace(url_nasdaq, "NASDAQ", "NYSE")
 
 download_pdf <- function(x) {
 
-  ticker <- str_extract(x, "NASDAQ_.*_2020|NYSE_.*_2020") %>%
+  ticker <- str_extract(x, "NASDAQ_.*_2018|NYSE_.*_2018") %>%
     str_remove("NASDAQ_|NYSE_") %>%
-    str_remove("_2020")
+    str_remove("_2018")
 
-  file_name <- str_c("raw_pdf_files/", ticker, ".pdf")
+  file_name <- str_c("raw_pdf_files_2018/", ticker, ".pdf")
 
   if (!file.exists(file_name)) {
     message("Download ", ticker)
