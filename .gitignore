@@ -5,3 +5,4 @@
 TDK_CSR-reports-and-ESG-scores.Rproj
 *.pdf
 *.docx
+*.DS_Store

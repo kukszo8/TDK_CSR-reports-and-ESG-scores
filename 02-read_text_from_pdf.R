@@ -1,23 +1,22 @@
-library("tidyverse")
-library("tidytext")
+library(furrr)
+plan(multisession(workers = 8))
 
+read_pdf <- safely( # hande errors
+  .f = function(x) {
+    message("Reading: ", x)
+    pdftools::pdf_text(x)
+  }, otherwise = NA, quiet = FALSE
+)
 
-
-input <- tibble(file_name = list.files("input_7", full.names = TRUE)) %>%
-  slice(5:19) %>% 
+list.files("raw_pdf_files", full.names = TRUE) %>%
+  map(list.files, full.names = TRUE) %>%
+  reduce(c) %>%
+  tibble(file_name = .) %>%
   transmute(
-    file_name,
-    company = sub(".*/", "", file_name) %>% 
+    year = str_extract(file_name, "\\d{4}"),
+    company = sub(".*/", "", file_name) %>%
       str_replace(.,".pdf",""),
-    raw_text = map(file_name, pdftools::pdf_text)
-  )
-
-
-df <- list.files("intermediate_data/", full.names=T) %>%
-  keep(~str_ends(., "rds")) %>% 
-  map_dfr(readRDS)%>% 
-  unnest(raw_text)%>% 
-  unnest_tokens(word,raw_text) %>% 
-  anti_join(get_stopwords()) %>% 
-  count(word, sort = TRUE)
-
+    raw_text = future_map(file_name, read_pdf, .progress = T)
+    # read pdf in parallel
+  ) %>%
+  saveRDS("intermediate_data/raw_text.rds")

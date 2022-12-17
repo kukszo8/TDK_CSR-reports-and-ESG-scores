@@ -1,4 +1,6 @@
+library(magrittr)
 library(tidyverse)
+
 
 safely_dir_create <- function(dir_name, gitignore = TRUE) {
 if (!dir.exists(dir_name)) {
