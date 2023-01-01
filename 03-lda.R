@@ -68,7 +68,7 @@ filter_year <- function(x){
 }
 
 
-dataframe<-filter_year(2012:2018)
+dataframe<-filter_year(2014:2019)
 
 
 esg_sparse <-dataframe %>%
