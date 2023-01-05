@@ -43,6 +43,16 @@ esg_score<-esg_cleaned %>%
   group_by(symbol) %>% 
   mutate(esg_change=ifelse(score>lag(score),"Javított","Rontott"))
 
+boxplot<-esg_score %>% 
+  left_join(sp500) %>% 
+  filter(year<2019) %>% 
+  drop_na() %>% 
+ggplot(aes(x=year, y=score, fill=sector)) + 
+  geom_boxplot() +
+  facet_wrap(~sector)
+
+boxplot
+
 
 filter_year <- function(x){
   list.files("intermediate_data/", full.names=T)%>%
@@ -57,6 +67,7 @@ filter_year <- function(x){
   unnest(raw_text) %>% 
   filter(row_number() %% 2 != 0) %>% 
   unnest(raw_text) %>% 
+  mutate(line = row_number()) %>%
   unnest_tokens(word,raw_text) %>% 
   filter(!grepl('[0-9]', word)) %>%  # remove numbers
   filter(nchar(word)>1) %>% 
@@ -72,12 +83,12 @@ dataframe<-filter_year(2014:2019)
 
 
 esg_sparse <-dataframe %>%
-  count(symbol, word) %>%
-  cast_sparse(symbol, word, n)
+  count(line, word) %>%
+  cast_sparse(line, word, n)
 
 covariates <- dataframe %>%
   sample_frac() %>%
-  distinct(symbol, esg_change) %>% 
+  distinct(line,esg_change,sector) %>% 
   drop_na
 
 dim(esg_sparse)
@@ -112,13 +123,13 @@ word_topics %>%
   labs(x = expression(beta), y = NULL)
 
 
+plot(topic_model, type = "summary", xlim = c(0, .3))
+
 # Graphical display of topic correlations
-install.packages("igraph")
 
 topic_correlation<-topicCorr(topic_model)
 plot(topic_correlation)
 
-plot(topic_model, type = "summary", xlim = c(0, .3))
 
 ##Predict effects
 
