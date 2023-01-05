@@ -81,6 +81,7 @@ filter_year <- function(x){
 
 dataframe<-filter_year(2014:2019)
 
+saveRDS(dataframe, file = "dataframe_14_19.rds")
 
 esg_sparse <-dataframe %>%
   count(line, word) %>%
