@@ -5,6 +5,8 @@ stm_prevalence <- ~ improve_total_score + sector
 
 for (k in 2:20) {
   
+message("Fitting topic model w ", crayon::blue(k), " topics started. ", crayon::magenta(str_c("(", Sys.time(), ")")))
+  
 tictoc::tic()
 
 topic_model <- stm(esg_sparse, 
@@ -20,6 +22,7 @@ runtime <- capture.output(tictoc::toc())
 board |> 
   pin_write(
     x = list(topic_model, runtime), 
+    type = "rds",
     name = stm_prevalence |> 
       as.character() |> 
       pluck(2) |> 
