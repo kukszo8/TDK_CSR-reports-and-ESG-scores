@@ -1,0 +1,30 @@
+---
+title: "manuscript"
+format: docx
+editor: visual
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+source("utils.R")
+```
+
+```{r}
+#| label: import
+
+
+```
+
+
+```{r}
+esg_score %>% 
+  left_join(sp500) %>% 
+  filter(year<2019) %>% 
+  drop_na() %>% 
+  ggplot(aes(x=year, y=score, fill=sector)) + 
+  geom_boxplot() +
+  facet_wrap(~sector)
+```
+

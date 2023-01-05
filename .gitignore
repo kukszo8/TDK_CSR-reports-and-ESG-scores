@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+.Rprofile
 TDK_CSR-reports-and-ESG-scores.Rproj
 *.pdf
 *.docx

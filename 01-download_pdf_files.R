@@ -1,4 +1,5 @@
-library("tidyverse")
+library(furrr)
+
 sp500_ticker <- tidyquant::tq_index("SP500")$symbol
 years_to_download <- 2010:2020
 
@@ -39,4 +40,33 @@ download_pdf <- function(x) {
   }
 }
 
-walk(c(url_nasdaq, url_nyse), download_pdf)
+plan(multisession(workers = parallel::detectCores() - 1))
+
+future_walk(c(url_nasdaq, url_nyse), download_pdf, .progress = TRUE)
+
+read_pdf <- safely( # hande errors
+  .f = function(x) {
+    message("Reading: ", x)
+    pdftools::pdf_text(x)
+  }, otherwise = NA, quiet = FALSE
+)
+
+list.files("raw_pdf_files", full.names = TRUE) %>%
+  map(list.files, full.names = TRUE) %>%
+  reduce(c) %>%
+  tibble(file_name = .) %>%
+  transmute(
+    year = str_extract(file_name, "\\d{4}"),
+    company = sub(".*/", "", file_name) %>%
+      str_replace(.,".pdf",""),
+    raw_text = future_map(file_name, read_pdf, .progress = T)
+    # read pdf in parallel
+  ) %>%
+  pin_write(
+    board = board,
+    name = "raw_text",
+    description = "Text extracted with pdftools from the downloaded CSR reports."
+  )
+
+# unlink("raw_pdf_files", recursive = TRUE) 
+# remove the temp directory
