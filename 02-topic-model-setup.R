@@ -40,6 +40,12 @@ esg_score_df <- esg_scores_raw |>
         .names = "improve_{.col}"
         )
     )
+
+board |> 
+pin_write(
+  esg_score_df,
+  "esg_score_df"
+)
   
 cleaned_text_data <- pin_read(board, "raw_text") |> 
   mutate(raw_text = map(raw_text, 1)) |> 
@@ -49,8 +55,8 @@ cleaned_text_data <- pin_read(board, "raw_text") |>
   left_join(esg_score_df, by = c("time", "company")) |> 
   rename(symbol = company) |> 
   left_join(sp500, by = "symbol") |> 
-  unnest(raw_text) |> 
   mutate(line = row_number()) %>%
+  unnest(raw_text) |> # these are only sep pages, but the same document
   unnest_tokens(word,raw_text) %>% 
   filter(!grepl('[0-9]', word)) %>%  # remove numbers
   filter(nchar(word)>1) %>% 
