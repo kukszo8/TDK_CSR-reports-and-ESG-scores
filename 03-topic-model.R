@@ -1,5 +1,9 @@
 esg_sparse <- pin_read(board, "esg_sparse")
-covariates <- pin_read(board, "covariates")
+covariates <- pin_read(board, "covariates") |> 
+  mutate_if(is.character, factor) |> 
+  mutate(
+    sector = fct_lump(sector, n = 6)
+  )
 
 stm_prevalence <- ~ improve_total_score + sector
 
