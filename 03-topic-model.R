@@ -1,11 +1,8 @@
 esg_sparse <- pin_read(board, "esg_sparse")
-covariates <- pin_read(board, "covariates") |> 
-  mutate_if(is.character, factor) |> 
-  mutate(
-    sector = fct_lump(sector, n = 6)
-  )
 
-stm_prevalence <- ~ improve_total_score + sector
+covariates <- pin_read(board, "covariates")
+
+stm_prevalence <- ~ improve_total_score
 
 for (k in 2:20) {
   
@@ -18,7 +15,7 @@ topic_model <- stm(esg_sparse,
                    prevalence = stm_prevalence,
                    data = covariates,
                    verbose = FALSE, 
-                   max.em.its = 5,
+                   max.em.its = 75,
                    init.type = "Spectral")
 
 runtime <- capture.output(tictoc::toc())

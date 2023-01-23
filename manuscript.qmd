@@ -22,6 +22,11 @@ raw_text <- pin_read(board, "raw_text") |>
 
 sp500 <- tq_index("SP500") %>% 
   select(1,2,5,6)
+
+pin_list(board) |> 
+  keep(str_detect, "stm-improve_total_score-sector_") |> 
+  map(pin_read, board = board) |> 
+  map(1)
 ```
 
 
@@ -34,3 +39,24 @@ esg_score %>%
   geom_boxplot() +
   facet_wrap(~sector)
 ```
+
+```{r}
+pin_read(board, "k_result_stm-improve_total_score-sector")  %>%
+  transmute(
+    K,
+    `Lower bound` = lbound,
+    Residuals = map_dbl(residual, "dispersion"),
+    `Semantic coherence` = map_dbl(semantic_coherence, mean),
+    `Held-out likelihood` = map_dbl(eval_heldout, "expected.heldout")
+  ) %>%
+  gather(Metric, Value, -K) %>%
+  ggplot(aes(K, Value, color = Metric)) +
+  geom_line(size = 1.5, alpha = 0.7, show.legend = FALSE) +
+  facet_wrap(~Metric, scales = "free_y") +
+  labs(x = "K (number of topics)",
+       y = NULL,
+       title = "Model diagnostics by number of topics",
+       subtitle = "These diagnostics indicate that a good number of topic")
+
+```
+
