@@ -4,7 +4,6 @@ heldout <- make.heldout(esg_sparse)
 k_result <- pin_list(board) %>% 
   keep(~str_starts(., "stm-improve_total_score_")) %>%
   enframe(value = "file_name", name=NULL) %>% 
-  slice(1) |> 
   splitted_transmute(
     topic_model = map(file_name, pin_read, board = board),
     topic_model = map(topic_model, 1),
@@ -22,7 +21,7 @@ k_result <- pin_list(board) %>%
     Residuals = map_dbl(residual, "dispersion"),
     `Semantic coherence` = map_dbl(semantic_coherence, mean),
     `Held-out likelihood` = map_dbl(eval_heldout, "expected.heldout"),
-    c("k", "exclusivity", "semantic_coherence", "eval_heldout", "residual", "bound", "lfact",
+    .keep = c("k", "exclusivity", "semantic_coherence", "eval_heldout", "residual", "bound", "lfact",
       "lbound", "iterations", "Lower bound", "Residuals",
       "Semantic coherence", "Held-out likelihood")
   )
