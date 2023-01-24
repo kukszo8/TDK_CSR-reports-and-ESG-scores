@@ -4,7 +4,7 @@ covariates <- pin_read(board, "covariates")
 
 stm_prevalence <- ~ improve_total_score
 
-for (k in 2:20) {
+for (k in 2:100) {
   
 message("Fitting topic model w ", crayon::blue(k), " topics started. ", crayon::magenta(str_c("(", Sys.time(), ")")))
   
