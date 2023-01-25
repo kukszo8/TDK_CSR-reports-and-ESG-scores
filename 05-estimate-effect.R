@@ -24,3 +24,23 @@ pin_list(board) |>
     board = board,
     "stm-effects-improve_total_score"
   )
+
+
+poliblogPrevFit<-pin_read(board,"stm-effects-improve_total_score") %>% 
+  group_by(k) %>% 
+  arrange(statistic) %>% 
+  filter(k==87)
+
+poliblogPrevFit<-pin_read(board,"stm-improve_total_score_87")[[1]]
+
+prep <- estimateEffect(1:87 ~ improve_total_score,
+                       poliblogPrevFit,
+                       cleaned_text_data %>% 
+                         distinct(line, improve_total_score) %>%
+                         arrange(line),uncertainty = "Global")
+
+
+plot(prep, covariate = "improve_total_score", topics = c(23, 48,5),
+     model = poliblogPrevFit, method = "pointestimate",
+     xlab = "Topic prevalance",
+     xlim = c(-0.05, .05))
