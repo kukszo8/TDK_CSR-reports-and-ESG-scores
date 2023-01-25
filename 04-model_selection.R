@@ -32,3 +32,47 @@ k_result |>
     "k_result_stm-improve_total_score"
   )
 
+
+##Exploring topic_30
+  
+topic_model_30 <- pin_list(board) %>% 
+keep(~str_starts(., "stm-improve_total_score_30")) %>%
+enframe(value = "file_name", name=NULL) %>% 
+mutate(topic_model = map(file_name, pin_read, board = board),
+topic_model = map(topic_model, 1),
+word_topics=map(topic_model,broom::tidy)) %>% 
+  select(word_topics) %>% 
+  unnest()
+
+
+topic_model_30 %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 10) %>%
+  ungroup() %>%
+  mutate(topic = paste("Topic", topic)) %>%
+  ggplot(aes(beta, reorder_within(term, beta, topic), fill = topic)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(vars(topic), scales = "free_y") +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_reordered() +
+  labs(x = expression(beta), y = NULL)
+
+topic_model_30_v2<-pin_read(board=board,"stm-improve_total_score_30") %>% 
+  .[[1]]
+
+plot(topic_model_30_v2, type = "summary", xlim = c(0, .3))
+labelTopics(topic_model_30_v2, c(2, 19, 10))
+
+
+###Estimateffect
+
+cleaned_text_data <- pin_read(board, "cleaned_text_data")
+
+effects <-
+  estimateEffect(
+    1:30 ~ improve_total_score,
+    topic_model_30_v2,
+    cleaned_text_data %>% distinct(line, improve_total_score) %>% arrange(line)
+  )
+
+results<- tidy(effects)
