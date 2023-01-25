@@ -1,0 +1,107 @@
+---
+title: Results
+format:
+  html:
+    embed-resources: true
+    code-fold: true
+    code-summary: "Show the code"
+toc: true
+theme:
+  light: flatly
+  dark: darkly
+date: last-modified
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: true
+  fig-dpi: 400
+  error: true
+  cache: false
+  warning: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+source("utils.R")
+```
+
+```{r}
+#| label: import
+
+esg_sparse <- pin_read(board, "esg_sparse")
+covariates <- pin_read(board, "covariates")
+
+raw_text <- pin_read(board, "raw_text") |> 
+  mutate(raw_text = map(raw_text, 1))
+
+sp500 <- tq_index("SP500") %>% 
+  select(1,2,5,6)
+```
+
+
+```{r}
+pin_read(board, "esg_score_df") %>% 
+  left_join(sp500) %>% 
+  filter(year<2019) %>% 
+  drop_na() %>% 
+  ggplot(aes(x=year, y=score, fill=sector)) + 
+  geom_boxplot() +
+  facet_wrap(~sector)
+```
+
+```{r}
+pin_read(board, "k_result_stm-improve_total_score") |> 
+  select(
+    k,
+    `Lower bound`,
+    Residuals,
+    `Semantic coherence`,
+    `Held-out likelihood`
+  ) |> 
+  pivot_longer(-k, names_to = "metric") |> 
+  ggplot(aes(k, value, color = metric)) +
+  geom_line(size = 1, show.legend = FALSE) +
+  geom_point(show.legend = FALSE) +
+  facet_wrap(~ metric, scales = "free_y") +
+  labs(x = "K (number of topics)",
+       y = NULL,
+       title = "Model diagnostics by number of topics",
+       subtitle = "These diagnostics indicate that a good number of topic")
+
+```
+
+### Beta for terms
+
+```{r}
+#| results: asis
+#| echo: false
+
+file_names <- pin_list(board) |> 
+  keep(str_detect, "stm-improve_total_score_\\d{1,2}") |> 
+  str_remove_all("\\D") |> 
+  as.numeric() |> 
+  sort()
+
+cat('::: {.panel-tabset group="Topic number"}\n\n')
+
+file_names |> 
+  walk(.f = function(k) {
+    cat(str_c("#### ", k, "\n\n"))
+    
+    str_c("stm-improve_total_score_", k) |> 
+      pin_read(board = board) |> 
+      pluck(1) |> 
+      broom::tidy() |> 
+      group_by(topic) |> 
+      slice_max(beta, n = 5) |> 
+      summarise(terms = str_flatten(term, ", ")) |> 
+      gt::gt() |> 
+      print()
+    
+    cat("\n")
+  })
+
+cat(":::")
+```
