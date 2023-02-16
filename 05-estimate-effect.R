@@ -3,7 +3,7 @@ cleaned_text_data <- pin_read(board, "cleaned_text_data")
 estimate_effect_score <- function(pin_name, f = "improve_total_score") {
   
   .fit <- pin_read(board, pin_name)[[1]]
-    
+  
   estimateEffect(
     as.formula(str_c("1:", .fit$settings$dim$K, " ~ ", f)),
     .fit,
@@ -15,10 +15,8 @@ estimate_effect_score <- function(pin_name, f = "improve_total_score") {
     mutate(k = .fit$settings$dim$K, .before = 1)
 }
 
-pin_list(board) |> 
-  keep(str_starts, "stm-improve_total_score_") |> 
-  cache_map(estimate_effect_score) |> 
-  bind_rows() |> 
+str_c("stm-improve_total_score_", 2:60) |> 
+  cp_map_dfr(estimate_effect_score) |> 
   arrange(k, topic) |> 
   pin_write(
     board = board,

@@ -1,9 +1,4 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
-.Rprofile
-TDK_CSR-reports-and-ESG-scores.Rproj
-*.pdf
-*.docx
-*.DS_Store
+*
+!utils.R
+![0-9][0-9]*.R
+!*.qmd

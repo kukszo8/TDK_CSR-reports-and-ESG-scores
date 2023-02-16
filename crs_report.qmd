@@ -54,14 +54,14 @@ pin_read(board, "esg_score_df") %>%
 ```{r}
 pin_read(board, "k_result_stm-improve_total_score") |> 
   select(
-    k,
+    K,
     `Lower bound`,
     Residuals,
     `Semantic coherence`,
     `Held-out likelihood`
   ) |> 
-  pivot_longer(-k, names_to = "metric") |> 
-  ggplot(aes(k, value, color = metric)) +
+  pivot_longer(-K, names_to = "metric") |> 
+  ggplot(aes(K, value, color = metric)) +
   geom_line(size = 1, show.legend = FALSE) +
   geom_point(show.legend = FALSE) +
   facet_wrap(~ metric, scales = "free_y") +

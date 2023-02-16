@@ -5,6 +5,7 @@ library(tidyquant)
 library(stm)
 library(pins)
 library(knitr)
+library(currr)
 
 
 suppressMessages({
