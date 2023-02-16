@@ -195,8 +195,11 @@ cleaned_text_data <- pin_read(board, "raw_text") |>
   drop_na()
 
 
+<<<<<<< HEAD
 cleaned_text_data %>% 
   pin_write(board = board, name = "cleaned_text_data")
+=======
+>>>>>>> bbb2d1bc20ce306bff91c6eaa6b4cccb6849d405
 
 cleaned_text_data %>%
   count(line, word) %>%
