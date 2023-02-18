@@ -100,7 +100,7 @@ esg_score_df_2014_2019<-esg_scores_raw|>
 
 ###ESG dataframe for the second model: 2019:2021 and lower ESG means better performance
 
-esg_score_df_2019_2021<-esg_scores_raw|> 
+esg_score_df_2019_2022<-esg_scores_raw|> 
   slice(-1) |> 
   set_names(esg_score_names) |> 
   pivot_longer(-c(1,2,3),names_to="time") %>% 
@@ -111,12 +111,13 @@ esg_score_df_2019_2021<-esg_scores_raw|>
   arrange(company, name, time) |> 
   group_by(company, name) |> 
   fill(value) |> 
-  filter(str_ends(time,"12-01")) %>% 
-  mutate(time=str_sub(time,1,4)) %>%
+  rename(yymmdd=time) %>% 
+  mutate(time=str_sub(yymmdd,1,4)) %>%
   mutate(time=as.numeric(time)) %>% 
-  filter(time %in% 2019:2021) %>% 
-  mutate(outlier_drop=ifelse(time==2019&!company %in% outliers_from_2019,"outlier","no outlier"))%>% 
-  filter(outlier_drop=="no outlier") %>% ##dropping those whole ESG scoring method in 2019
+  filter(time %in% 2019:2022) %>%
+  mutate(time_drop=ifelse(str_ends(yymmdd,"12-01")|(time==2022&str_ends(yymmdd,"08-01")),"keep","drop"),
+    outlier_drop=ifelse(time==2019&!company %in% outliers_from_2019,"outlier","no outlier"))%>% 
+  filter(outlier_drop=="no outlier"&time_drop=="keep") %>% ##dropping those whole ESG scoring method in 2019
   pivot_wider() |> 
   janitor::clean_names() |> 
   mutate(
@@ -141,7 +142,7 @@ group_by(time) %>%
 ##Saving out the ESG dataframes to board
 
 
-esg_score_df<-bind_rows(esg_score_df_2014_2019,esg_score_df_2019_2021)  
+esg_score_df<-bind_rows(esg_score_df_2014_2019,esg_score_df_2019_2022)  
 
 board |> 
   pin_write(
@@ -191,7 +192,7 @@ cleaned_text_data <- pin_read(board, "raw_text") |>
   filter(tolower(company)!=word) %>% ##remove company names from words
   filter(tolower(gsub(' [A-z ]*', '' , company))!=word) %>% ##remove company names from words
   anti_join(get_stopwords(), by = "word") |> 
-  select(line, word, improve_total_score,mean_total_score, sector,time) |> 
+  select(line, word, improve_total_score,mean_total_score, company, sector,time) |> 
   drop_na()
 
 
@@ -208,3 +209,27 @@ cleaned_text_data |>
   distinct(line, .keep_all = TRUE) |> 
   select(- word) |> 
   pin_write(board = board, name = "covariates")
+
+
+###Creating same data structure for stm and estimate effect
+
+esg_score_df<-pin_read(board,"esg_score_df")
+
+esg_score_df_2<-pin_read(board,"esg_score_df") %>% 
+  select(company,time,improve_total_score) %>% 
+  group_by(company) %>% 
+  mutate(lead_improve=dplyr::lead(improve_total_score)) %>% 
+  rename(symbol=company) %>% 
+  left_join(sp500) %>% 
+  select(time,company,lead_improve)
+
+covariates<-pin_read(board, "covariates") 
+
+covariates_2<-pin_read(board, "cleaned_text_data") %>% 
+  left_join(esg_score_df_2,by=c("time","company")) %>% 
+  drop_na() %>% 
+  distinct(line, .keep_all = TRUE)  %>% 
+  arrange(symbol)
+
+
+

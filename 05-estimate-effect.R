@@ -25,34 +25,6 @@ str_c("stm-improve_total_score_", 2:60) |>
 
 
 
-##testing
-
-
-sp500 <- tq_index("SP500") %>% 
-  select(1,2)
- 
-esg<-esg_score_df %>% 
-  select(company,time,improve_total_score) %>% 
-  group_by(company) %>% 
-  mutate(lead_improve=dplyr::lead(improve_total_score)) %>% 
-  rename(symbol=company) %>% 
-  left_join(sp500) %>% 
-  select(time,company,lead_improve)
-
-cleaned_text_data_v2<-cleaned_text_data %>% 
-  left_join(esg,by=c("time","company")) %>% 
-  drop_na()
-
-test<-cleaned_text_data_v2 %>% 
-  distinct(line, lead_improve,symbol,time) %>% 
-  arrange(symbol)
-
-test2<-cleaned_text_data%>% 
-  distinct(line, improve_total_score,company,time) %>% 
-  arrange(company) %>% 
-left_join(sp500) %>% 
-  left_join(test,by=c("time","symbol"))
-
 ###Etimating 30
  
 model_30<-pin_read(board,"stm-improve_total_score_30")[[1]]
