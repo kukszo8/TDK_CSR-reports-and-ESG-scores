@@ -191,7 +191,7 @@ cleaned_text_data <- pin_read(board, "raw_text") |>
   filter(tolower(company)!=word) %>% ##remove company names from words
   filter(tolower(gsub(' [A-z ]*', '' , company))!=word) %>% ##remove company names from words
   anti_join(get_stopwords(), by = "word") |> 
-  select(line, word, improve_total_score,mean_total_score, sector,time) |> 
+  select(line, word, improve_total_score,mean_total_score, company, sector,time) |> 
   drop_na()
 
 
