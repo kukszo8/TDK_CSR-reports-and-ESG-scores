@@ -24,7 +24,6 @@ str_c("stm-improve_total_score_", 2:60) |>
   )
 
 
-
 ###Etimating 30
  
 model_30<-pin_read(board,"stm-improve_total_score_30")[[1]]

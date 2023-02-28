@@ -2,7 +2,7 @@ esg_sparse <- pin_read(board, "esg_sparse")
 
 covariates <- pin_read(board, "covariates")
 
-stm_prevalence <- ~ improve_total_score
+stm_prevalence <- ~ time
 
 for (k in 2:60) {
   
