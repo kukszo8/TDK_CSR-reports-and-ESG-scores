@@ -1,7 +1,7 @@
 library(furrr)
 
 sp500_ticker <- tidyquant::tq_index("SP500")$symbol
-years_to_download <- 2010:2020
+years_to_download <- 2010:2021
 
 dir.create("raw_pdf_files")
 walk(str_c("raw_pdf_files/", years_to_download), dir.create)
