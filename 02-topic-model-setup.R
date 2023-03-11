@@ -139,16 +139,70 @@ group_by(time) %>%
       .names = "mean_{.col}")
   )
 
+##Binding two datasets together and creating lead variables
+
+
+esg_score_df<-bind_rows(esg_score_df_2014_2019,esg_score_df_2019_2022) %>% 
+  select(company,time,improve_e_score:mean_total_score) %>% 
+  group_by(company) %>% 
+  mutate(
+    across(
+      improve_e_score:mean_total_score,
+      ~ lead(.),
+      .names = "lead_{.col}")
+    )%>% 
+  rename(symbol=company) %>% 
+  left_join(sp500) %>% 
+  drop_na() %>% 
+  select(time,symbol,lead_improve_s_score:sector)
+
+
 ##Saving out the ESG dataframes to board
-
-
-esg_score_df<-bind_rows(esg_score_df_2014_2019,esg_score_df_2019_2022)  
 
 board |> 
   pin_write(
     esg_score_df,
     "esg_score_df"
   )
+
+###ESG data version 2: Eikon Datastream
+
+
+sp500 <- tq_index("SP500") %>% 
+  select(1,2,5,6)
+
+
+esg_scores_eikon_raw <- rio::import("eikon_esg_scores.xlsx") |> 
+  data.frame() |> 
+  tibble() %>% 
+  pivot_longer(-1) %>% 
+  filter(!str_detect(name, 'ERROR')) %>% 
+  mutate(name=str_replace(name,"ESG.Score",'')) %>% 
+  arrange(name, year) |> 
+  group_by(name) %>% 
+  mutate(value=as.numeric(value)) %>% 
+  rename(esg_score=value) %>% 
+  mutate(change_esg_score=esg_score-lag(esg_score),
+         improve_esg_score=ifelse(esg_score>lag(esg_score), "improved", "not_improved")) %>% 
+  rename(time=year) %>% 
+  group_by(time) %>% 
+  mutate(esg_score_mean=mean(esg_score,na.rm=TRUE),
+         compared_to_avg=ifelse(esg_score>esg_score_mean,"better_than_avg","worse_than_avg")) %>% 
+  group_by(name) %>% 
+  mutate(
+    across(
+      improve_esg_score:compared_to_avg,
+      ~ lead(.),
+      .names = "lead_{.col}")
+  )  %>% 
+  rename(company=name) %>% 
+  select(time,company,lead_improve_esg_score,lead_compared_to_avg) 
+
+esg_scores_eikon_raw%>% 
+  stringdist_left_join(sp500,by="company",max_dist=99)
+
+
+##Creating text dataframe
   
 cleaned_text_data <- pin_read(board, "raw_text") |> 
     mutate(raw_text = map(raw_text, 1)) |> 
@@ -218,6 +272,7 @@ esg_score_df<-pin_read(board,"esg_score_df")
 esg_score_df_2<-pin_read(board,"esg_score_df") %>% 
   select(company,time,improve_total_score) %>% 
   group_by(company) %>% 
+  ###Alindexeket is berakni, illetve átlagnál jobb/rosszabb
   mutate(lead_improve=dplyr::lead(improve_total_score)) %>% 
   rename(symbol=company) %>% 
   left_join(sp500) %>% 
@@ -226,7 +281,7 @@ esg_score_df_2<-pin_read(board,"esg_score_df") %>%
 covariates<-pin_read(board, "covariates") 
 
 covariates_2<-pin_read(board, "cleaned_text_data") %>% 
-  left_join(esg_score_df_2,by=c("time","company")) %>% 
+  inner_join(esg_score_df_2,by=c("time","company")) %>% 
   drop_na() %>% 
   distinct(line, .keep_all = TRUE)  %>% 
   arrange(symbol)

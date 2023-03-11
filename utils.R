@@ -6,6 +6,7 @@ library(stm)
 library(pins)
 library(knitr)
 library(currr)
+library(fuzzyjoin)
 
 
 suppressMessages({
