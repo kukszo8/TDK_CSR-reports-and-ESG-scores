@@ -1,3 +1,5 @@
+#############################ESG data version 1: Sustainalytics
+
 sp500 <- tq_index("SP500") %>% 
   select(1,2,5,6)
 
@@ -165,26 +167,26 @@ board |>
     "esg_score_df"
   )
 
-###ESG data version 2: Eikon Datastream
+#############################ESG data version 2: Eikon Datastream
 
 
 sp500 <- tq_index("SP500") %>% 
   select(1,2,5,6)
 
 
-esg_scores_eikon_raw <- rio::import("eikon_esg_scores.xlsx") |> 
+esg_score_df_eikon <- rio::import("eikon_esg_scores.xlsx") |> 
   data.frame() |> 
   tibble() %>% 
+  slice(-1) %>% 
+  rename(time=1)%>% 
   pivot_longer(-1) %>% 
-  filter(!str_detect(name, 'ERROR')) %>% 
-  mutate(name=str_replace(name,"ESG.Score",'')) %>% 
-  arrange(name, year) |> 
+  filter(!str_detect(value, 'ERROR|INVALID')) %>% 
+  arrange(name, time) |> 
   group_by(name) %>% 
   mutate(value=as.numeric(value)) %>% 
   rename(esg_score=value) %>% 
   mutate(change_esg_score=esg_score-lag(esg_score),
          improve_esg_score=ifelse(esg_score>lag(esg_score), "improved", "not_improved")) %>% 
-  rename(time=year) %>% 
   group_by(time) %>% 
   mutate(esg_score_mean=mean(esg_score,na.rm=TRUE),
          compared_to_avg=ifelse(esg_score>esg_score_mean,"better_than_avg","worse_than_avg")) %>% 
@@ -195,25 +197,29 @@ esg_scores_eikon_raw <- rio::import("eikon_esg_scores.xlsx") |>
       ~ lead(.),
       .names = "lead_{.col}")
   )  %>% 
-  rename(company=name) %>% 
-  select(time,company,lead_improve_esg_score,lead_compared_to_avg) 
+  rename(symbol=name) %>% 
+  left_join(sp500,by="symbol") %>% 
+  drop_na()
 
-esg_scores_eikon_raw%>% 
-  stringdist_left_join(sp500,by="company",max_dist=99)
-
+board |> 
+  pin_write(
+    esg_score_df_eikon,
+    "esg_score_df_eikon"
+  )
 
 ##Creating text dataframe
+
+esg_score_df_eikon<-pin_read(board,"esg_score_df_eikon") %>% 
+select(time,company,symbol,lead_improve_esg_score,lead_compared_to_avg) 
   
 cleaned_text_data <- pin_read(board, "raw_text") |> 
     mutate(raw_text = map(raw_text, 1)) |> 
     rename(time = year) |> 
     mutate(time = as.numeric(time)) |> 
-    filter(time %in% 2015:2021) %>% 
-    left_join(esg_score_df %>% 
-                group_by(company) %>% 
-                slice(-1),
-                 by = c("time", "company")) %>%
-    rename(symbol = company) |> 
+    filter(time %in% 2014:2021) %>% 
+    rename(symbol=company) %>% 
+    left_join(esg_score_df_eikon,
+                 by = c("time", "symbol")) %>%
     left_join(sp500, by = "symbol")|> 
     mutate(line = row_number()) %>%
     unnest(raw_text) |> # these are only sep pages, but the same document
@@ -242,11 +248,13 @@ cleaned_text_data <- pin_read(board, "raw_text") |>
          word=str_replace_all(word,"ż","u"),
   ) %>% 
   filter(str_detect(word,"[a-zA-Z]")) %>% ##Filter Russian and Chinese words
-  filter(tolower(symbol)!=word) %>% ##remove symbol names from words
+  filter(tolower(symbol)!=word) %>%  ##remove symbol names from words %>% 
+  rename(company=company.x) %>% 
+  select(-company.y) %>% 
   filter(tolower(company)!=word) %>% ##remove company names from words
   filter(tolower(gsub(' [A-z ]*', '' , company))!=word) %>% ##remove company names from words
   anti_join(get_stopwords(), by = "word") |> 
-  select(line, word, improve_total_score,mean_total_score, company, sector,time) |> 
+  select(line, word, lead_improve_esg_score,lead_compared_to_avg, company, sector,time) |> 
   drop_na()
 
 
@@ -263,28 +271,3 @@ cleaned_text_data |>
   distinct(line, .keep_all = TRUE) |> 
   select(- word) |> 
   pin_write(board = board, name = "covariates")
-
-
-###Creating same data structure for stm and estimate effect
-
-esg_score_df<-pin_read(board,"esg_score_df")
-
-esg_score_df_2<-pin_read(board,"esg_score_df") %>% 
-  select(company,time,improve_total_score) %>% 
-  group_by(company) %>% 
-  ###Alindexeket is berakni, illetve átlagnál jobb/rosszabb
-  mutate(lead_improve=dplyr::lead(improve_total_score)) %>% 
-  rename(symbol=company) %>% 
-  left_join(sp500) %>% 
-  select(time,company,lead_improve)
-
-covariates<-pin_read(board, "covariates") 
-
-covariates_2<-pin_read(board, "cleaned_text_data") %>% 
-  inner_join(esg_score_df_2,by=c("time","company")) %>% 
-  drop_na() %>% 
-  distinct(line, .keep_all = TRUE)  %>% 
-  arrange(symbol)
-
-
-
