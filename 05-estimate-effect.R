@@ -1,6 +1,6 @@
 cleaned_text_data <- pin_read(board, "cleaned_text_data")
 
-estimate_effect_score <- function(pin_name, f = "improve_total_score") {
+estimate_effect_score <- function(pin_name, f = "lead_qvartilis") {
   
   .fit <- pin_read(board, pin_name)[[1]]
   
@@ -8,31 +8,32 @@ estimate_effect_score <- function(pin_name, f = "improve_total_score") {
     as.formula(str_c("1:", .fit$settings$dim$K, " ~ ", f)),
     .fit,
     cleaned_text_data %>% 
-      distinct(line, improve_total_score) %>%
-      arrange(line)
+      distinct(line, lead_qvartilis) %>%
+      arrange(line,uncertainty="Global")
   ) |> 
     broom::tidy() |> 
     mutate(k = .fit$settings$dim$K, .before = 1)
 }
 
-str_c("stm-improve_total_score_", 2:60) |> 
+str_c("stm-time_", c(2,4:60)) |> 
   cp_map_dfr(estimate_effect_score) |> 
   arrange(k, topic) |> 
   pin_write(
     board = board,
-    "stm-effects-improve_total_score"
+    "stm_ef_qvart"
   )
 
-
-###Etimating 30
+###One by one test
  
-model_30<-pin_read(board,"stm-improve_total_score_30")[[1]]
+model_10<-pin_read(board,"stm-time_10")[[1]]
 
-model_30_est <- estimateEffect(1:30 ~ lead_improve,
-                        model_30,
-                        cleaned_text_data_v2 %>% 
-                         distinct(line, lead_improve) %>%
+model_10_est <- estimateEffect(1:10 ~ lead_compared_to_sector,
+                               model_10,
+                        cleaned_text_data %>% 
+                         distinct(line, lead_compared_to_sector) %>%
                          arrange(line),uncertainty = "Global")
+
+summary(model_10_est)
 
 
 plot(prep, covariate = "improve_total_score", topics = c(23, 48,5),
