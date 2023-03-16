@@ -173,7 +173,6 @@ board |>
 sp500 <- tq_index("SP500") %>% 
   select(1,2,5,6)
 
-
 esg_score_df_eikon <- rio::import("eikon_esg_scores.xlsx") |> 
   data.frame() |> 
   tibble() %>% 
@@ -206,6 +205,7 @@ esg_score_df_eikon <- rio::import("eikon_esg_scores.xlsx") |>
   )  %>% 
   drop_na()
 
+
 board |> 
   pin_write(
     esg_score_df_eikon,
@@ -216,6 +216,7 @@ board |>
 
 esg_score_df_eikon<-pin_read(board,"esg_score_df_eikon") %>% 
 select(time,company,symbol,lead_change_firm:lead_compared_to_avg) 
+
   
 cleaned_text_data <- pin_read(board, "raw_text") |> 
     mutate(raw_text = map(raw_text, 1)) |> 
@@ -259,7 +260,6 @@ cleaned_text_data <- pin_read(board, "raw_text") |>
   filter(tolower(company)!=word) %>% ##remove company names from words
   filter(tolower(gsub(' [A-z ]*', '' , company))!=word) %>% ##remove company names from words
   anti_join(get_stopwords(), by = "word") |> 
-  select(line, word, lead_improve_esg_score,lead_compared_to_avg, company, sector,time) |> 
   drop_na()
 
 
@@ -276,3 +276,4 @@ cleaned_text_data |>
   distinct(line, .keep_all = TRUE) |> 
   select(- word) |> 
   pin_write(board = board, name = "covariates")
+
