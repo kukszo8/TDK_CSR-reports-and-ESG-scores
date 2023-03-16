@@ -82,8 +82,8 @@ pin_read(board, "k_result_stm-improve_total_score") |>
 #| results: asis
 #| echo: false
 
-file_names <- pin_list(board) |> 
-  keep(str_detect, "stm-improve_total_score_\\d{1,2}") |> 
+file_names <- pin_list(board)|> 
+  keep(str_detect, "stm-time_\\d{1,2}") |> 
   str_remove_all("\\D") |> 
   as.numeric() |> 
   sort()
@@ -94,12 +94,12 @@ file_names |>
   walk(.f = function(k) {
     cat(str_c("#### ", k, "\n\n"))
     
-    str_c("stm-improve_total_score_", k) |> 
+    str_c("stm-time_", k) |> 
       pin_read(board = board) |> 
       pluck(1) |> 
       broom::tidy() |> 
       group_by(topic) |> 
-      slice_max(beta, n = 5) |> 
+      slice_max(beta, n = 10) |> 
       summarise(terms = str_flatten(term, ", ")) |> 
       gt::gt() |> 
       print()
