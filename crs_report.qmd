@@ -38,7 +38,7 @@ raw_text <- pin_read(board, "raw_text") |>
   rename(symbol=company,
          time=year) %>% 
   mutate(time=as.numeric(time),
-        has_report=1)
+        has_report="Available CSR report")
 ```
 
 
@@ -51,6 +51,33 @@ table1<-pin_read(board, "esg_score_df_eikon") %>%
             q25 = quantile(esg_score, probs =0.25),
             median=median(esg_score),
             q75 = quantile(esg_score, probs =0.75))
+
+
+table2<-pin_read(board, "esg_score_df_eikon") %>% 
+  left_join(raw_text,by=c("symbol","time"))%>% 
+  select(-raw_text) %>% 
+  group_by(symbol) %>% 
+  mutate(min_year=min(time)) %>% 
+  filter(time==2020) %>% 
+  group_by(min_year) %>% 
+  summarise(n=n(),
+            median=median(esg_score),
+            avg=mean(esg_score),
+            std_dev=sd(esg_score,na.rm=TRUE))
+  
+  
+
+table_proba<-table1 %>% 
+  pivot_longer(-c(1,2,3))
+
+
+ggplot(table_proba, 
+       aes(x = time, y = value, colour=has_report, group = has_report)) +  
+  geom_line() + geom_point()+
+  facet_grid(~factor(name, levels=c('q25','median','q75')))+
+  scale_color_manual(values=c('#063970', '#A69943'))+
+  geom_line(size=1.5)
+
 
 
 ```

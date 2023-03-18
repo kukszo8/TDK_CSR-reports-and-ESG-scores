@@ -262,10 +262,24 @@ cleaned_text_data <- pin_read(board, "raw_text") |>
   anti_join(get_stopwords(), by = "word") |> 
   drop_na()
 
+###Checking terms that does not appear in at least 3 companies' report
+
+unique_words<-cleaned_text_data %>% 
+  count(symbol, word, sort = TRUE)%>% 
+  group_by(word) %>% 
+  mutate(count=n()) %>% 
+  filter(count<=3) %>% 
+  pull(2)
+  
+##Filtering out unique words
+
+cleaned_text_data<-cleaned_text_data %>% 
+  filter(!word %in% unique_words)
+  
+##Saving out databases for the STM model
 
 cleaned_text_data %>% 
   pin_write(board = board, name = "cleaned_text_data")
-
 
 cleaned_text_data %>%
   count(line, word) %>%
@@ -276,4 +290,3 @@ cleaned_text_data |>
   distinct(line, .keep_all = TRUE) |> 
   select(- word) |> 
   pin_write(board = board, name = "covariates")
-
