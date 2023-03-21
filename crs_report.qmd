@@ -149,7 +149,6 @@ cat(":::")
       print()
 
 
-
 ##Proba
 esg_sparse<-pin_read(board,"esg_sparse")
 stm_time_12<-pin_read(board,"stm-time_12") %>% 
