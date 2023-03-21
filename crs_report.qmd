@@ -79,11 +79,10 @@ ggplot(table_proba,
   geom_line(size=1.5)
 
 
-
 ```
 
 ```{r}
-pin_read(board, "k_result_stm-improve_total_score") |> 
+pin_read(board, "k_result_stm-time") |> 
   select(
     K,
     `Lower bound`,
@@ -144,10 +143,41 @@ cat(":::")
       pluck(1) |> 
       broom::tidy() |> 
       group_by(topic) |> 
-      slice_max(beta, n = 8) |> 
+      slice_max(beta, n = 12) |> 
       summarise(terms = str_flatten(term, ", ")) |> 
       gt::gt() |> 
       print()
+
+
+
+##Proba
+esg_sparse<-pin_read(board,"esg_sparse")
+stm_time_12<-pin_read(board,"stm-time_12") %>% 
+.[[1]]
+
+td_beta <- tidy(stm_time_12)
+
+
+td_gamma <- tidy(stm_time_12, matrix = "gamma",
+                 document_names = rownames(esg_sparse))
+
+top_terms <- td_beta %>%
+  arrange(beta) %>%
+  group_by(topic) %>%
+  top_n(7, beta) %>%
+  arrange(-beta) %>%
+  select(topic, term) %>%
+  summarise(terms = list(term)) %>%
+  mutate(terms = map(terms, paste, collapse = ", ")) %>% 
+  unnest()
+
+gamma_terms <- td_gamma %>%
+  group_by(topic) %>%
+  summarise(gamma = mean(gamma)) %>%
+  arrange(desc(gamma)) %>%
+  left_join(top_terms, by = "topic") %>%
+  mutate(topic = paste0("Topic ", topic),
+         topic = reorder(topic, gamma))
 
 
 ```
