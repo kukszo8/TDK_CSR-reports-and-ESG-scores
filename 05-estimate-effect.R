@@ -28,8 +28,30 @@ stm_ef_change_comp_firm <- pin_read(board, "stm_ef_change_comp_firm") %>%
   arrange(p.value) %>% 
   filter(k<13)
 
+models_to_read<- pin_list(board) %>% 
+  keep(str_detect, "stm_ef.*")
 
-plot(prep, covariate = "improve_total_score", topics = c(23, 48,5),
-     model = poliblogPrevFit, method = "pointestimate",
-     xlab = "Topic prevalance",
-     xlim = c(-0.05, .05))
+est_effect <- tibble(models_to_read) %>% 
+mutate(data=map(models_to_read,
+    ~pin_read(board = board,.)),
+    data = map(data, ~ filter(., term!="(Intercept)")),
+    data=map(data,~ filter(., k<=13))) %>% 
+  unnest(data) %>% 
+  filter(models_to_read %in% c("stm_ef_change_comp_sector","stm_ef_change_comp_firm",
+                               "stm_ef_comp_avg")) %>% 
+  filter(term %in% c("lead_compared_to_sectorworse_than_sector","lead_improve_esg_scorenot_improved",
+                     "lead_compared_to_avgworse_than_avg"))%>% 
+  mutate(p.value=round(p.value,digits=2))
+
+
+ggplot(est_effect %>% 
+         filter(k>=3), 
+       aes(x = k, y = topic, fill = p.value)) +
+  facet_wrap(~models_to_read,nrow=1 ) +
+  geom_tile(color = "white",
+            lwd = 1.5,
+            linetype = 1) +
+  geom_text(aes(label = p.value), color = "white", size = 3)+
+  coord_fixed()+
+  labs(
+       title = "Estimate topic prevalance with different ESG covariates")
