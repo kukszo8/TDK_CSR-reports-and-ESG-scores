@@ -1,9 +1,9 @@
 esg_sparse <- pin_read(board, "esg_sparse")
 heldout <- make.heldout(esg_sparse)
 
-options(currr.folder = ".currr", currr.workers = 5)
+options(currr.folder = ".currr", currr.workers = 1)
 
-model_names <- str_c("stm-improve_total_score_", 2:60)
+model_names <- str_c("stm-time_", c(2, 4:60))
 
 x = model_names[1]
 
@@ -40,7 +40,7 @@ k_result <- model_names |>
 k_result |>
   pin_write(
     board = board,
-    "k_result_stm-improve_total_score"
+    "k_result_stm-time"
   )
 
 
