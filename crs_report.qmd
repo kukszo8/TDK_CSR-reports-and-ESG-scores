@@ -136,3 +136,18 @@ file_names |>
 
 cat(":::")
 ```
+
+```{r}
+
+
+      pin_read(board,"stm-time_12") |> 
+      pluck(1) |> 
+      broom::tidy() |> 
+      group_by(topic) |> 
+      slice_max(beta, n = 8) |> 
+      summarise(terms = str_flatten(term, ", ")) |> 
+      gt::gt() |> 
+      print()
+
+
+```

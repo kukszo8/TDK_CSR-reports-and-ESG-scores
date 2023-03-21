@@ -1,6 +1,6 @@
 cleaned_text_data <- pin_read(board, "cleaned_text_data")
 
-estimate_effect_score <- function(pin_name, f = "lead_qvartilis") {
+estimate_effect_score <- function(pin_name, f = "s(lead_qvartilis)+s(time)") {
   
   .fit <- pin_read(board, pin_name)[[1]]
   
@@ -8,7 +8,7 @@ estimate_effect_score <- function(pin_name, f = "lead_qvartilis") {
     as.formula(str_c("1:", .fit$settings$dim$K, " ~ ", f)),
     .fit,
     cleaned_text_data %>% 
-      distinct(line, lead_qvartilis) %>%
+      distinct(line, lead_qvartilis,time) %>%
       arrange(line,uncertainty="Global")
   ) |> 
     broom::tidy() |> 
@@ -20,8 +20,14 @@ str_c("stm-time_", c(2,4:60)) |>
   arrange(k, topic) |> 
   pin_write(
     board = board,
-    "stm_ef_qvart"
+    "stm_ef_lead_qvart"
   )
+
+stm_ef_lead_qvart <- pin_read(board, "stm_ef_lead_qvart") %>% 
+  filter(term!="(Intercept)") %>% 
+  arrange(p.value) %>% 
+  filter(k<13)
+
 
 ###One by one test
  

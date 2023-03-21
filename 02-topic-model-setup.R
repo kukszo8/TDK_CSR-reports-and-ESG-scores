@@ -262,15 +262,17 @@ cleaned_text_data <- pin_read(board, "raw_text") |>
   anti_join(get_stopwords(), by = "word") |> 
   drop_na()
 
-###Checking terms that does not appear in at least 3 companies' report
+###Checking terms that does not appear in at least 10 companies' report
+
+cleaned_text_data <-pin_read(board,"cleaned_text_data")
 
 unique_words<-cleaned_text_data %>% 
   count(symbol, word, sort = TRUE)%>% 
   group_by(word) %>% 
   mutate(count=n()) %>% 
-  filter(count<=3) %>% 
+  filter(count<=10) %>% 
   pull(2)
-  
+
 ##Filtering out unique words
 
 cleaned_text_data<-cleaned_text_data %>% 
